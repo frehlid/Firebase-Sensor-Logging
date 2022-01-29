@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <Wifi.h>
-#include <Firebase_ESP_Client.h>
+#include <Firebase_ESP_Client.h> // install with platformIO
 #include <Time.h>
 #include <sensitve_data.h> // stores Firebase data, passwords, etc
 
@@ -30,8 +30,6 @@ const long dayLightSavings_offset = 3600; // really?
 const char * time_now;
 
 
-
-// Code based on https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/#3
 void setupWiFi() {
   // set the wifi to station mode
   WiFi.mode(WIFI_STA);
@@ -44,7 +42,6 @@ void setupWiFi() {
   }
   // print out the local ip after connecting
   Serial.print(WiFi.localIP());
-  Serial.println("end of setupwifi");
 }
 
 
@@ -61,13 +58,11 @@ void setupFirebase() {
   
   // begin the database connection
   Firebase.begin(&config, &auth);
-  Serial.println("end of setupFirebase");
 }
 
 // 
 void setupTime() {
   configTime(pst_offset_sec, dayLightSavings_offset, ntp);
-  Serial.println("end of setupTime");
 }
 
 
@@ -77,9 +72,7 @@ char * currentTime() {
   struct tm * time_info;
   time( &now );
   time_info = localtime(&now);
-
-  char * time_curr = asctime(time_info);
-
+  char * time_curr = asctime(time_info); // gets the current time from time_info
   return time_curr;
 }
 
@@ -97,26 +90,22 @@ void loop() {
   while (Serial2.available()) {
 
     if (Firebase.ready()) {
-      Serial.println("fb ready");
-
       time_now = currentTime();
-      Serial.println("time ready");
-  
       // for debugging:
       Serial.println("time :");
       Serial.printf("%s", time_now);
-  
-      //boolean inputReady = true;
+
       // get temp from serial
-      //if (inputReady) {
       String temp_reading =  Serial2.readStringUntil(13);
       Serial.println("temp read");
       Serial.println("temp :");
       Serial.println(temp_reading);
+
+      // set the temp reading and time to the firebase json object
       json.set(temperaturePath.c_str(), temp_reading);
-      //inputReady = false;
-      //}
       json.set(timePath.c_str(), String(time_now));
+      
+      // call to setJSON to se the firebase json data
       Serial.printf("Setting database ... %s\n", Firebase.RTDB.setJSON(&data, mainPath.c_str(), &json) ? "ok" : data.errorReason().c_str());
     }
   }
